@@ -1,0 +1,4 @@
+I want to learn-by-doing about tracing just-in-time compilers like
+LuaJIT2, TraceMonkey, and PyPy. Since the core mechanism seems to be
+explanation-based learning, that's in scope too, plus whatever the
+EBL and tracing JIT literatures might have to offer each other.

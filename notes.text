@@ -1,0 +1,145 @@
+[parts of these notes are out of date]
+
+First plan:
+
+ X first fumblings
+ - FSM language
+ - PEG or pushdown-automata language
+ - Forth
+ - CPS Scheme. (Maybe skip here straight from FSM?)
+ - Something actually useful (in assembler or Lua?)
+
+------------------------------------------------------------------
+Tracing jit = explanation-based generalization
+
+EBG starts with a general definition and a concrete problem to solve
+with it. It deploys general methods to solve it, recording its
+'operational' actions. Then it saves the record, generalized, to use
+on future problems, hopefully more efficiently. This is simple in
+principle, but to do this efficiently you need to make good decisions
+about which examples to record and how to generalize them.
+
+A tracing compiler starts from a program and an execution state at a
+particular control-flow node. It runs forward some number of steps,
+recording its primitive actions. Then it saves the record, generalized
+and compiled, to use on future visits to the same node. Once again you
+want to make economical decisions about which traces to record and
+what aspects of them to generalize from the trace (e.g. the value of a
+variable often varies when its type doesn't).
+
+(Similar, but speculative: a data structure optimizer starts from an
+operation on a particular object. It records what's done, and in
+particular what's accessed through multiple links from the starting
+object. The record is used to alter the layout of similar objects for
+more direct access -- perhaps only of newly-allocated ones. Both data
+and code need to be altered, in coordination. Yet again we need smarts
+about what to do this to.)
+
+It's sort of a commonplace that a tracing jit does specialization, or
+partial evaluation. I think EBG is an even closer fit. (It's true that
+EBG=PE, in that the core algorithm in Prolog is the same for each; but
+the same *relation* doesn't mean the same *function* -- see below.)
+
+If you look at the code in the EBG=PE paper, basically all you need to
+do to get a tracing compiler is define the 'operational' predicate to
+be true on recursive calls to the goal.
+
+The PyPy folks have a tracing jit for Prolog, but they don't seem to
+have remarked on the connection to EBG.
+
+(So how about an example-guided partial evaluator? It could do
+opportunistic reductions like an online PE, but still produce
+fully-general (but guarded) code like an offline PE with all-dynamic
+arguments. This corresponds to the guards and side exits of a tracing
+jit compiler. If we trace *multiple* examples before generating code,
+that's like a trace-tree based compiler; though of course one run of
+the program can produce multiple examples of calls to individual
+functions.)
+
+The previous paragraph amounts to a source-level tracing jit, right?
+A "tracing ahead-of-time compiler".
+
+EBG extracts the conditions on the arguments that allow more-general
+calls to make the same decisions. An example of this in a tracing jit
+is specializing on the argument type.
+
+A note about "EBG = PE": isn't that weird, the name for this in one
+community is generalization, while in the other community it's
+specialization! But no, it makes sense: EBG and PE deal in the same
+*relation*: a special trace from a general definition. What you call
+the relation depends on which end you start from. (TODO: characterize
+exactly how EBG and PE call on the EBG/PE algorithm with
+differently-variabilized arguments. Also how the core algorithm fails
+on realistic use cases of the different kinds.)
+
+Can we somehow show the idea of specializing data representations
+in a simplified setting too?
+
+http://en.wikipedia.org/wiki/Explanation-based_learning
+
+------------------------------------------------------------------
+The tracing-jit-compiler papers I've read have described quite a few
+heuristics. Can we simplify? What if we could economically measure the
+effect of speculative decisions -- then it'd 'just' be a matter of the
+system trying out compiling actions and using what works.
+
+(That 'just' could hide a lot: explore vs. exploit, estimating which
+differences are significant, tracking changes to the program's
+behavior over time (when decisions that used to improve things no
+longer do), and computing and using 'exchange rates': marginal prices
+to rationally trade off resources like time and memory. Also, it
+doesn't excuse us from predicting, because one of the major expenses
+is recording a trace, which may be used only once, so finding out that
+you shouldn't have recorded that trace doesn't directly help you avoid
+more bad decisions -- it's not like trying out a fully compiled trace
+tree and deciding you'd rather go back to the older version.)
+
+More basically there's the mechanics of how to compare the runs for a
+larger trace-tree vs. the *relevant* runs of a smaller trace-tree and
+its side exit.
+
+If the compiler compiles itself, there's a need for metareasoning
+about how much effort that deserves. Does that just fall out?
+
+So, can we make a rational compiler?
+
+This idea of just trying stuff out is kind of similar to Dybvig's
+paper on his Scheme inliner (which doesn't use runtime data, though).
+
+------------------------------------------------------------------
+Would it help to use some kind of loop detector (like
+tortois-and-hare) on the traces instead of assuming the loop starts
+where we guessed it?
+
+What if we never abandon recording a trace, we just record into a
+circular buffer? We'd need to be able to recover the starting point
+when we detect a loop. Kind of nice for simplicity: we don't need
+alternative tracing and nontracing actions in the interpreter.
+
+------------------------------------------------------------------
+How well does the equality-saturation approach to optimization mesh
+with trace trees? Does it have advantages over something like the SPUR
+idea of relying on an SMT solver? (Is it even really different?)
+
+------------------------------------------------------------------
+[really obsolete] OK, a plan for explaining this in a blog post:
+
+Start with lis.py trimmed down to purely-functional. Augment into a
+PE/EBG as in the PE=EBG paper. Add a header argument and make calls to
+it be 'operational'. Talk about all the stuff this explanation glosses
+over.
+
+Also worth mentioning in post: the win in tracing is not really from
+avoiding compiling cold code; it's that trace trees are much
+easier/quicker to optimize than general flowgraphs.
+
+------------------------------------------------------------------
+Refs:
+
+http://github.com/resistor/BrainFTracing2
+http://github.com/resistor/BrainFTracing
+http://lambda-the-ultimate.org/node/3851
+http://www.ics.uci.edu/~franz/
+http://morepypy.blogspot.com/2010/07/comparing-spur-to-pypy.html
+http://lambda-the-ultimate.org/node/3806
+http://andreasgal.wordpress.com/2008/06/
