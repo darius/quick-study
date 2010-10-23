@@ -186,10 +186,10 @@ def compile(trace):
     defn = '\n  '.join(compiling(trace))
     print defn
     exec defn
-    return eval('foo'), ()
+    return eval('compiled_loop'), ()
 
 def compiling(trace):
-    yield 'def foo(pc, ch, next, recorder):'
+    yield 'def compiled_loop(pc, ch, next, recorder):'
     yield 'recorder.reset()'
     yield 'while True:'
     for fn, arg in trace:
