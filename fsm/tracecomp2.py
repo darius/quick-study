@@ -43,7 +43,7 @@ def show(insns):
 ## run(loopy, 'xxxx-')
 #. X
 #. X
-#. def foo(pc, ch, next, recorder):
+#. def compiled_loop(pc, ch, next, recorder):
 #.   recorder.reset()
 #.   while True:
 #.     if not (ch and ch in 'x'): return 3, ch
@@ -72,39 +72,39 @@ def run(program, string):
     return execute(parse(program), string)
 
 def parse(program):
-    targets = {}            # (cmd, tnum) -> pc
+    targets = {}            # (state, tnum) -> pc
     for pass_num in range(2): # (The first pass just fills in targets[])
-        insns = []          # Result of the parse
-        for cmd in program:
-            tokens = cmd.split()
-            tnum = 0        # Index into tokens[]
-            live = True     # True when the next insn may be reachable
-            def append(fn, *args):
-                if live: insns.append((fn, args))
-            while tnum < len(tokens):
-                targets[(cmd, tnum)] = len(insns)
-                t = tokens[tnum]
-                tnum += 1
-                if t == 'if':
-                    charset = tokens[tnum]
-                    assert tokens[tnum+1] == '['
-                    tnum += 2
-                    target = targets.get((cmd, tokens.index(']', tnum)))
-                    append(do_if, charset, target)
-                elif t == ']':
-                    live = True
-                elif t == 'emit':
-                    append(do_emit, tokens[tnum])
-                    tnum += 1
-                elif t == 'goto':
-                    state = int(tokens[tnum])
-                    tnum += 1
-                    append(do_goto, targets.get((program[state], 0)))
-                    live = False
-                else:
-                    assert False, t
-            append(do_halt)
+        insns = []
+        for state, cmd in enumerate(program):
+            parse_cmd(insns, targets, state, cmd.split())
     return insns
+
+def parse_cmd(insns, targets, state, tokens):
+    "Add to insns and targets by parsing tokens (for the given state)."
+    live = True             # True when the next insn may be reachable
+    def append(fn, *args):
+        if live: insns.append((fn, args))
+    enum = enumerate(tokens)
+    for tnum, t in enum:
+        targets[(state, tnum)] = len(insns)
+        if t == 'if':
+            tnum, charset = enum.next()
+            tnum, _ = enum.next()
+            assert _ == '['
+            target = targets.get((state, tokens.index(']', tnum)))
+            append(do_if, charset, target)
+        elif t == ']':
+            live = True
+        elif t == 'emit':
+            tnum, literal = enum.next()
+            append(do_emit, literal)
+        elif t == 'goto':
+            tnum, dest_state = enum.next()
+            append(do_goto, targets.get((int(dest_state), 0)))
+            live = False
+        else:
+            assert False, t
+    append(do_halt)
 
 
 # The interpreter. Calls the recorder for all the tracing JIT stuff.
