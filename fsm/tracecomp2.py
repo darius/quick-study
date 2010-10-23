@@ -132,11 +132,11 @@ def do_if(pc, ch, next, recorder, charset, target):
         return target, ch
 
 def gen_if_true(arg):
-    yield '  if not (ch and ch in %r): return %r, ch' % arg
-    yield '  ch = next()'
+    yield 'if not (ch and ch in %r): return %r, ch' % arg
+    yield 'ch = next()'
 
 def gen_if_false(arg):
-    yield '  if ch and ch in %r: return %r, ch' % arg
+    yield 'if ch and ch in %r: return %r, ch' % arg
 
 def do_emit(pc, ch, next, recorder, literal):
     recorder.record(gen_emit, literal)
@@ -144,7 +144,7 @@ def do_emit(pc, ch, next, recorder, literal):
     return pc + 1, ch
 
 def gen_emit(literal):
-    yield '  print %r' % literal
+    yield 'print %r' % literal
 
 def do_goto(pc, ch, next, recorder, target):
     if target < pc:
@@ -183,15 +183,15 @@ class Recorder(object):
             self.reset()
 
 def compile(trace):
-    defn = '\n  '.join(['def foo(pc, ch, next, recorder):']
-                       + list(compiling(trace)))
+    defn = '\n  '.join(compiling(trace))
     print defn
     exec defn
     return eval('foo'), ()
 
 def compiling(trace):
+    yield 'def foo(pc, ch, next, recorder):'
     yield 'recorder.reset()'
     yield 'while True:'
     for fn, arg in trace:
         for line in fn(arg):
-            yield line
+            yield '  ' + line
