@@ -9,23 +9,27 @@ branchy = ["if a [ goto 2 ] if b [ goto 1 ] emit neither goto 2",
            "emit one",
            "emit two"]
 
-## for pc, insn in enumerate(parse(loopy)): print pc, insn
-#. 0 If(charset='x',target=3)
-#. 1 Emit(literal='X')
-#. 2 Goto(target=0)
-#. 3 Halt()
+def show(parsed):
+    for pc, (fn, args) in enumerate(parsed):
+        print '%3d %-8s %s' % (pc, fn.__name__, ', '.join(map(repr, args)))
+
+## show(parse(loopy))
+#.   0 do_if    'x', 3
+#.   1 do_emit  'X'
+#.   2 do_goto  0
+#.   3 do_halt  
 #. 
-## for pc, insn in enumerate(parse(branchy)): print pc, insn
-#. 0 If(charset='a',target=2)
-#. 1 Goto(target=8)
-#. 2 If(charset='b',target=4)
-#. 3 Goto(target=6)
-#. 4 Emit(literal='neither')
-#. 5 Goto(target=8)
-#. 6 Emit(literal='one')
-#. 7 Halt()
-#. 8 Emit(literal='two')
-#. 9 Halt()
+## show(parse(branchy))
+#.   0 do_if    'a', 2
+#.   1 do_goto  8
+#.   2 do_if    'b', 4
+#.   3 do_goto  6
+#.   4 do_emit  'neither'
+#.   5 do_goto  8
+#.   6 do_emit  'one'
+#.   7 do_halt  
+#.   8 do_emit  'two'
+#.   9 do_halt  
 #. 
 
 ## run(["emit X"], '')
@@ -73,8 +77,8 @@ def parse(program):
             tokens = cmd.split()
             tnum = 0        # Index into tokens[]
             live = True     # True when the next insn may be reachable
-            def append(insn):
-                if live: insns.append(insn)
+            def append(insn, *args):
+                if live: insns.append((insn, args))
             while tnum < len(tokens):
                 targets[(cmd, tnum)] = len(insns)
                 t = tokens[tnum]
@@ -84,20 +88,20 @@ def parse(program):
                     assert tokens[tnum+1] == '['
                     tnum += 2
                     target = targets.get((cmd, tokens.index(']', tnum)))
-                    append(If(charset, target))
+                    append(do_if, charset, target)
                 elif t == ']':
                     live = True
                 elif t == 'emit':
-                    append(Emit(tokens[tnum]))
+                    append(do_emit, tokens[tnum])
                     tnum += 1
                 elif t == 'goto':
                     state = int(tokens[tnum])
                     tnum += 1
-                    append(Goto(targets.get((program[state], 0))))
+                    append(do_goto, targets.get((program[state], 0)))
                     live = False
                 else:
                     assert False, t
-            append(Halt())
+            append(do_halt)
     return insns
 
 
@@ -110,50 +114,37 @@ def execute(program, string):
             return input.next()
         except StopIteration:
             return None
-
     ch = next()
     pc = 0
     recorder = Recorder()
     while pc is not None:
-        pc, ch = program[pc].step(pc, ch, next, recorder)
+        fn, args = program[pc]
+        pc, ch = fn(pc, ch, next, recorder, *args)
 
-class Insn(object):
-    def __repr__(self):
-        args = ','.join('%s=%r' % x for x in self.__dict__.items())
-        return '%s(%s)' % (self.__class__.__name__, args)
+def do_if(pc, ch, next, recorder, charset, target):
+    if ch and ch in charset:
+        recorder.op('[true', (charset, target))
+        return pc + 1, next()
+    else:
+        recorder.op('[false', (charset, pc + 1))
+        return target, ch
 
-class If(Insn):
-    def __init__(self, charset, target):
-        self.charset = charset
-        self.target = target
-    def step(self, pc, ch, next, recorder):
-        if ch and ch in self.charset:
-            recorder.op('[true', (self.charset, self.target))
-            return pc + 1, next()
-        else:
-            recorder.op('[false', (self.charset, pc + 1))
-            return self.target, ch
+def do_emit(pc, ch, next, recorder, literal):
+    recorder.op('emit', literal)
+    print literal
+    return pc + 1, ch
 
-class Emit(Insn):
-    def __init__(self, literal):
-        self.literal = literal
-    def step(self, pc, ch, next, recorder):
-        recorder.op('emit', self.literal)
-        print self.literal
-        return pc + 1, ch
+def do_goto(pc, ch, next, recorder, target):
+    if target < pc:
+        recorder.backjump(target)
+        fn = recorder.find_code(target)
+        if fn:
+            recorder.reset()
+            return fn(ch, next)
+    return target, ch
 
-class Goto(Insn):
-    def __init__(self, target):
-        self.target = target
-    def step(self, pc, ch, next, recorder):
-        if self.target < pc:
-            recorder.backjump(self.target)
-        fn = recorder.find_code(self.target)
-        return fn(ch, next) if fn else (self.target, ch)
-
-class Halt(Insn):
-    def step(self, pc, ch, next, recorder):
-        return None, ch
+def do_halt(pc, ch, next, recorder):
+    return None, ch
 
 
 # Trace recording, compiling, and lookup.
@@ -163,8 +154,8 @@ trace_limit = 50
 class Recorder(object):
     def __init__(self):
         self.code = {}     # pc -> compiled-function
-        self._reset()
-    def _reset(self, pc=None):
+        self.reset()
+    def reset(self, pc=None):
         self.head = pc     # The pc starting the current trace, if any
         self.trace = []    # A growing list of instructions
     def find_code(self, pc):
@@ -174,14 +165,14 @@ class Recorder(object):
             if len(self.trace) < trace_limit:
                 self.trace.append((tag, arg))
             else:
-                self._reset()
+                self.reset()
     def backjump(self, pc):
         if self.head is None:
             if pc not in self.code:
-                self._reset(pc)
+                self.reset(pc)
         elif self.head == pc:   # Closed the loop?
             self.code[pc] = compile(self.trace)
-            self._reset()
+            self.reset()
 
 def compile(trace):
     defn = '\n  '.join(['def foo(ch, next):']
