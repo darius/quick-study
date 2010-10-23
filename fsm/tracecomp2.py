@@ -125,16 +125,26 @@ def execute(insns, string):
 
 def do_if(pc, ch, next, recorder, charset, target):
     if ch and ch in charset:
-        recorder.op('[true', (charset, target))
+        recorder.record(gen_if_true, (charset, target))
         return pc + 1, next()
     else:
-        recorder.op('[false', (charset, pc + 1))
+        recorder.record(gen_if_false, (charset, pc + 1))
         return target, ch
 
+def gen_if_true(arg):
+    yield '  if not (ch and ch in %r): return %r, ch' % arg
+    yield '  ch = next()'
+
+def gen_if_false(arg):
+    yield '  if ch and ch in %r: return %r, ch' % arg
+
 def do_emit(pc, ch, next, recorder, literal):
-    recorder.op('emit', literal)
+    recorder.record(gen_emit, literal)
     print literal
     return pc + 1, ch
+
+def gen_emit(literal):
+    yield '  print %r' % literal
 
 def do_goto(pc, ch, next, recorder, target):
     if target < pc:
@@ -157,10 +167,10 @@ class Recorder(object):
     def reset(self, pc=None):
         self.head = pc     # The pc starting the current trace, if any
         self.trace = []    # A growing list of instructions
-    def op(self, tag, arg):
+    def record(self, gen_fn, arg):
         if self.head is not None:
             if len(self.trace) < trace_limit:
-                self.trace.append((tag, arg))
+                self.trace.append((gen_fn, arg))
             else:
                 self.reset()
     def backjump(self, pc):
@@ -182,13 +192,6 @@ def compile(trace):
 def compiling(trace):
     yield 'recorder.reset()'
     yield 'while True:'
-    for op, arg in trace:
-        if op == 'emit':
-            yield '  print %r' % arg
-        elif op == '[true':
-            yield '  if not (ch and ch in %r): return %r, ch' % arg
-            yield '  ch = next()'
-        elif op == '[false':
-            yield '  if ch and ch in %r: return %r, ch' % arg
-        else:
-            assert False, op
+    for fn, arg in trace:
+        for line in fn(arg):
+            yield line
