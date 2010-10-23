@@ -40,14 +40,16 @@ def show(parsed):
 #. 
 ## run(["if x [ emit hey ]"], 'y')
             
-## run(loopy, 'xxx-')
+## run(loopy, 'xxxx-')
 #. X
 #. X
-#. def foo(ch, next):
+#. def foo(pc, ch, next, recorder):
+#.   recorder.reset()
 #.   while True:
 #.     if not (ch and ch in 'x'): return 3, ch
 #.     ch = next()
 #.     print 'X'
+#. X
 #. X
 #. 
 
@@ -116,7 +118,7 @@ def execute(program, string):
             return None
     ch = next()
     pc = 0
-    recorder = Recorder()
+    recorder = Recorder(program)
     while pc is not None:
         fn, args = program[pc]
         pc, ch = fn(pc, ch, next, recorder, *args)
@@ -137,10 +139,6 @@ def do_emit(pc, ch, next, recorder, literal):
 def do_goto(pc, ch, next, recorder, target):
     if target < pc:
         recorder.backjump(target)
-        fn = recorder.find_code(target)
-        if fn:
-            recorder.reset()
-            return fn(ch, next)
     return target, ch
 
 def do_halt(pc, ch, next, recorder):
@@ -152,14 +150,13 @@ def do_halt(pc, ch, next, recorder):
 trace_limit = 50
 
 class Recorder(object):
-    def __init__(self):
-        self.code = {}     # pc -> compiled-function
+    def __init__(self, program):
+        self.program = program
+        self.heads = set()      # pc's starting compiled chunks
         self.reset()
     def reset(self, pc=None):
         self.head = pc     # The pc starting the current trace, if any
         self.trace = []    # A growing list of instructions
-    def find_code(self, pc):
-        return self.code.get(pc)
     def op(self, tag, arg):
         if self.head is not None:
             if len(self.trace) < trace_limit:
@@ -168,20 +165,22 @@ class Recorder(object):
                 self.reset()
     def backjump(self, pc):
         if self.head is None:
-            if pc not in self.code:
+            if pc not in self.heads:
                 self.reset(pc)
         elif self.head == pc:   # Closed the loop?
-            self.code[pc] = compile(self.trace)
+            self.program[pc] = compile(self.trace)
+            self.heads.add(pc)
             self.reset()
 
 def compile(trace):
-    defn = '\n  '.join(['def foo(ch, next):']
+    defn = '\n  '.join(['def foo(pc, ch, next, recorder):']
                        + list(compiling(trace)))
     print defn
     exec defn
-    return eval('foo')
+    return eval('foo'), ()
 
 def compiling(trace):
+    yield 'recorder.reset()'
     yield 'while True:'
     for op, arg in trace:
         if op == 'emit':
