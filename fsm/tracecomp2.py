@@ -145,7 +145,7 @@ def do_halt(pc, ch, next, recorder):
     return None, ch
 
 
-# Trace recording, compiling, and lookup.
+# Trace recording and compiling.
 
 trace_limit = 50
 
