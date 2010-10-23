@@ -147,7 +147,7 @@ def do_halt(pc, ch, next, recorder):
 
 # Trace recording and compiling.
 
-trace_limit = 50
+trace_limit = 50                # We give up on traces that get this long
 
 class Recorder(object):
     def __init__(self, insns):
@@ -166,7 +166,7 @@ class Recorder(object):
     def backjump(self, pc):
         if self.head is None:
             if pc not in self.heads:
-                self.reset(pc)
+                self.reset(pc)  # Start recording a loop
         elif self.head == pc:   # Closed the loop?
             self.insns[pc] = compile(self.trace)
             self.heads.add(pc)
