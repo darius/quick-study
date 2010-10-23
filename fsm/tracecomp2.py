@@ -9,8 +9,8 @@ branchy = ["if a [ goto 2 ] if b [ goto 1 ] emit neither goto 2",
            "emit one",
            "emit two"]
 
-def show(parsed):
-    for pc, (fn, args) in enumerate(parsed):
+def show(insns):
+    for pc, (fn, args) in enumerate(insns):
         print '%3d %-8s %s' % (pc, fn.__name__, ', '.join(map(repr, args)))
 
 ## show(parse(loopy))
@@ -79,8 +79,8 @@ def parse(program):
             tokens = cmd.split()
             tnum = 0        # Index into tokens[]
             live = True     # True when the next insn may be reachable
-            def append(insn, *args):
-                if live: insns.append((insn, args))
+            def append(fn, *args):
+                if live: insns.append((fn, args))
             while tnum < len(tokens):
                 targets[(cmd, tnum)] = len(insns)
                 t = tokens[tnum]
@@ -109,7 +109,7 @@ def parse(program):
 
 # The interpreter. Calls the recorder for all the tracing JIT stuff.
 
-def execute(program, string):
+def execute(insns, string):
     input = iter(string)
     def next():
         try:
@@ -118,9 +118,9 @@ def execute(program, string):
             return None
     ch = next()
     pc = 0
-    recorder = Recorder(program)
+    recorder = Recorder(insns)
     while pc is not None:
-        fn, args = program[pc]
+        fn, args = insns[pc]
         pc, ch = fn(pc, ch, next, recorder, *args)
 
 def do_if(pc, ch, next, recorder, charset, target):
@@ -150,8 +150,8 @@ def do_halt(pc, ch, next, recorder):
 trace_limit = 50
 
 class Recorder(object):
-    def __init__(self, program):
-        self.program = program
+    def __init__(self, insns):
+        self.insns = insns
         self.heads = set()      # pc's starting compiled chunks
         self.reset()
     def reset(self, pc=None):
@@ -168,7 +168,7 @@ class Recorder(object):
             if pc not in self.heads:
                 self.reset(pc)
         elif self.head == pc:   # Closed the loop?
-            self.program[pc] = compile(self.trace)
+            self.insns[pc] = compile(self.trace)
             self.heads.add(pc)
             self.reset()
 
