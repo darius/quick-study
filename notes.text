@@ -3,7 +3,7 @@
 First plan:
 
  X first fumblings
- - FSM language
+ X FSM language
  - PEG or pushdown-automata language
  - Forth
  - CPS Scheme. (Maybe skip here straight from FSM?)
@@ -238,6 +238,47 @@ or Ertl, but dropping the constraint of preserving basic-block
 boundaries, as above.
 
 ------------------------------------------------------------------
+From Cuni's thesis on PyPy, agreeing that the generalization step also
+matters in tracing jits:
+
+5.5 Generalization of the trace and code generation
+
+Once the trace has been completed, we can finally compile it. The goal
+of the compilation phase is to generate efficient machine code that
+can be used to execute the next iterations of the loop that we have
+just traced. Remember that a trace represents a single, concrete
+iteration of the loop, thus before actually emitting the machine code,
+we generalize the trace in order to make it representing a wider range
+of the next iterations.
+
+As usually happens in most situations, there is a tension between
+abstraction and efficiency:
+
+ • if we generalize too much, we might end up with sub-optimal machine
+   code
+
+ • if we don’t generalize enough, we might end up with code bloats, as
+   the code generated is too specialized and cannot be reused for some
+   or most of the subsequent iterations of the loop
+
+Sometimes, finding the right generalization is easy. Consider for
+example the trace above in Figure 5.4: most of the operands of the
+instructions are concrete integers (e.g., 1, 3, 4), thus we can
+generalize them to variables of type int and be sure that the
+generated code is optimal for all the next iterations. However,
+sometimes the job is more complex, especially if we have complex
+inheritance trees: for example, if some concrete value seen in the
+trace is an instance of, say, class A, we might want to generate code
+that accepts only A instances, or we might want to generate code that
+is more reusable and accepts also instances of some superclass of A.
+
+The concrete strategy to solve this problem vary between each
+implementation of a tracing JIT. In Section 6.5.1 we will see how PyPy
+deals with it.
+
+
+
+------------------------------------------------------------------
 Refs:
 
 http://news.ycombinator.com/item?id=1645820
@@ -250,3 +291,10 @@ http://lambda-the-ultimate.org/node/3806
 http://andreasgal.wordpress.com/2008/06/
 http://github.com/aemoncannon/rubinius
 http://slidefinder.net/t/trace_fragment_selection_method_based/12114382
+
+Eddy H. Debaere and Jan M. Van Campenhout. Interpretation and
+Instruction Path Coprocessing. The MIT Press, 1990.
+
+Peter Clark and Rob Holte [1992], Lazy Partial Evaluation: An
+Integration of Explanation-Based Learning and Partial Evaluation
+[via johnicholas]
