@@ -87,7 +87,14 @@ def parse_cmd(insns, targets, state, tokens):
     enum = enumerate(tokens)
     for tnum, t in enum:
         targets[(state, tnum)] = len(insns)
-        if t == 'if':
+        if t == 'emit':
+            tnum, literal = enum.next()
+            append(do_emit, literal)
+        elif t == 'goto':
+            tnum, dest_state = enum.next()
+            append(do_goto, targets.get((int(dest_state), 0)))
+            live = False
+        elif t == 'if':
             tnum, charset = enum.next()
             tnum, _ = enum.next()
             assert _ == '['
@@ -95,13 +102,6 @@ def parse_cmd(insns, targets, state, tokens):
             append(do_if, charset, target)
         elif t == ']':
             live = True
-        elif t == 'emit':
-            tnum, literal = enum.next()
-            append(do_emit, literal)
-        elif t == 'goto':
-            tnum, dest_state = enum.next()
-            append(do_goto, targets.get((int(dest_state), 0)))
-            live = False
         else:
             assert False, t
     append(do_halt)
@@ -123,20 +123,8 @@ def execute(insns, string):
         fn, args = insns[pc]
         pc, ch = fn(pc, ch, next, recorder, *args)
 
-def do_if(pc, ch, next, recorder, charset, target):
-    if ch and ch in charset:
-        recorder.record(gen_if_true, (charset, target))
-        return pc + 1, next()
-    else:
-        recorder.record(gen_if_false, (charset, pc + 1))
-        return target, ch
-
-def gen_if_true(arg):
-    yield 'if not (ch and ch in %r): return %r, ch' % arg
-    yield 'ch = next()'
-
-def gen_if_false(arg):
-    yield 'if ch and ch in %r: return %r, ch' % arg
+def do_halt(pc, ch, next, recorder):
+    return None, ch
 
 def do_emit(pc, ch, next, recorder, literal):
     recorder.record(gen_emit, literal)
@@ -151,8 +139,20 @@ def do_goto(pc, ch, next, recorder, target):
         recorder.backjump(target)
     return target, ch
 
-def do_halt(pc, ch, next, recorder):
-    return None, ch
+def do_if(pc, ch, next, recorder, charset, target):
+    if ch and ch in charset:
+        recorder.record(gen_if_true, (charset, target))
+        return pc + 1, next()
+    else:
+        recorder.record(gen_if_false, (charset, pc + 1))
+        return target, ch
+
+def gen_if_true(arg):
+    yield 'if not (ch and ch in %r): return %r, ch' % arg
+    yield 'ch = next()'
+
+def gen_if_false(arg):
+    yield 'if ch and ch in %r: return %r, ch' % arg
 
 
 # Trace recording and compiling.
