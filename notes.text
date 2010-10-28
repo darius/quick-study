@@ -54,7 +54,8 @@ arguments. This corresponds to the guards and side exits of a tracing
 jit compiler. If we trace *multiple* examples before generating code,
 that's like a trace-tree based compiler; though of course one run of
 the program can produce multiple examples of calls to individual
-functions.)
+functions.) [This turns out to have been done: see "Lazy Partial
+Evaluation" below.]
 
 The previous paragraph amounts to a source-level tracing jit, right?
 A "tracing ahead-of-time compiler".
