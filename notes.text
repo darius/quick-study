@@ -231,7 +231,13 @@ just the type of the data, I think). Not going to worry about it
 tonight, important as it is.
 
 Back to the goal that triggered this: how well would this work on
-towers of interpreters?
+towers of interpreters? It wouldn't, yet, because even with the
+ability to isolate the traces of higher-level loops somehow, as above,
+we still to decide, when we're at the base-level loop header, which
+one of those compiled traces to dispatch to. For this we must look at
+the data the lower-level interpreters are interpreting. (Or we could
+just take them all as one giant trace tree, but that seems bad for
+optimization.)
 
 ------------------------------------------------------------------
 Probably simpler than the above scheme: superoperators a la Proebsting
