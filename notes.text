@@ -283,7 +283,10 @@ The concrete strategy to solve this problem vary between each
 implementation of a tracing JIT. In Section 6.5.1 we will see how PyPy
 deals with it.
 
-
+------------------------------------------------------------------ 
+One way to mitigate blowup in code to compile: instead of a trace
+tree, build a dag. (The only loops are still to the header at top.)
+Not as nice to compile from, though.
 
 ------------------------------------------------------------------
 Refs:
