@@ -5,8 +5,16 @@
 % at the prompt before loading terp.pl (so that clause(G, Antecedent)
 % can find the program's clauses).
 
-meta((G1, G2)) :- meta(G1), meta(G2).
-meta(G) :- basic(G), \+ G = (_, _), call(G).
-meta(G) :- \+ basic(G), clause(G, Antecedent), meta(Antecedent).
+meta((G1, G2)) :-
+        !,
+        meta(G1),
+        meta(G2).
+meta(G) :-
+        (basic(G) ->
+            call(G)
+        ;
+            clause(G, Antecedent),
+            meta(Antecedent)).
 
-basic(G) :- predicate_property(G, built_in).
+basic(G) :-
+        predicate_property(G, built_in).
