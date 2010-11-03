@@ -8,9 +8,8 @@
 meta(true).
 meta((G1, G2)) :- meta(G1), meta(G2).
 meta(G) :- special(G), call(G).
-meta(G) :- \+ special(G), clause(G, Antecedent), meta(Antecedent).
+meta(G) :- \+ (special(G); G = (_,_)), clause(G, Antecedent), meta(Antecedent).
 
-special((_, _)).
 special(_ is _).
 special(_ =\= _).
 special(write(_)).
