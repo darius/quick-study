@@ -7,10 +7,10 @@
 
 meta(true).
 meta((G1, G2)) :- meta(G1), meta(G2).
-meta(G) :- special(G), call(G).
-meta(G) :- \+ (special(G); G = (_,_)), clause(G, Antecedent), meta(Antecedent).
+meta(G) :- basic(G), call(G).
+meta(G) :- \+ (basic(G); G = (_,_)), clause(G, Antecedent), meta(Antecedent).
 
-special(_ is _).
-special(_ =\= _).
-special(write(_)).
-special(nl).
+basic(_ is _).
+basic(_ =\= _).
+basic(write(_)).
+basic(nl).
