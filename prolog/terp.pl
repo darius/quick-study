@@ -11,7 +11,7 @@ run(PC, S, Insn) :-
 
 step(jump(Target), PC, S, Target, S).
 step(branch(Target), PC, [0|S], Target, S).
-step(branch(Target), PC, [Z|S], PC1, S) :- Z =\= 0, PC1 is PC+1.
+step(branch(Target), PC, [Z|S], PC1, S) :- Z \= 0, PC1 is PC+1.
 step(Insn, PC, S, PC1, S1) :- operate(Insn, S, S1), PC1 is PC+1.
 
 operate(push(Literal), S, [Literal|S]).
@@ -21,7 +21,7 @@ operate(add, [Z,Y|S], [R|S]) :- R is Y+Z.
 operate(sub, [Z,Y|S], [R|S]) :- R is Y-Z.
 operate(mul, [Z,Y|S], [R|S]) :- R is Y*Z.
 operate(eq, [Z,Z|S], [1|S]).
-operate(eq, [Z,Y|S], [0|S]) :- Y =\= Z.
+operate(eq, [Z,Y|S], [0|S]) :- Y \= Z.
 operate(write, [H|S], S) :- write(H), nl.
 
 

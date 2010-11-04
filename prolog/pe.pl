@@ -38,7 +38,7 @@ trivial(true).
 trivial(X is E) :-
         ground(X),
         ground(E).
-trivial(T1 =\= T2) :-
+trivial(T1 \= T2) :-
         ground(T1),
         ground(T2).
 
