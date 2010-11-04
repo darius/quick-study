@@ -34,13 +34,13 @@ simplify((R1, R2), SR) :-
 simplify(basic(G), []) :- trivial(G).
 simplify(basic(G), [G]) :- \+ trivial(G).
 
-trivial(true).
-trivial(X is E) :-
-        ground(X),
-        ground(E).
-trivial(T1 \= T2) :-
-        ground(T1),
-        ground(T2).
+trivial(G) :-
+        ground(G),
+        pure(G).
+
+pure(true).
+pure(_ is _).
+pure(_ \= _).
 
 append([], L, L).
 append([H|T], L, [H|Z]) :-
