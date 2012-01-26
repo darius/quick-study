@@ -42,12 +42,9 @@ branchy = ["'a [ goto 2 ] 'b [ goto 1 ] 'neither emit goto 2",
 def run(program, string):
     states = [cmd.split() for cmd in program]
     input = iter(string)
-    def next():
-        try:
-            return input.next()
-        except StopIteration:
-            return None
-    ch = next()
+    def get_ch():
+        return next(input, None)
+    ch = get_ch()
     state = 0
     pc, acc, tokens = 0, '', states[state]
     while pc < len(tokens):
@@ -57,7 +54,7 @@ def run(program, string):
             acc = t[1:]
         elif t == '[':
             if ch and ch in acc:
-                ch = next()
+                ch = get_ch()
             else:
                 pc = tokens.index(']', pc) + 1
         elif t == ']':

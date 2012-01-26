@@ -43,11 +43,11 @@ def show(insns):
 ## run(loopy, 'xxxx-')
 #. X
 #. X
-#. def compiled_loop(pc, ch, next, recorder):
+#. def compiled_loop(pc, ch, get_ch, recorder):
 #.   recorder.reset()
 #.   while True:
 #.     if not (ch and ch in 'x'): return 3, ch
-#.     ch = next()
+#.     ch = get_ch()
 #.     print 'X'
 #. X
 #. X
@@ -111,22 +111,19 @@ def parse_cmd(insns, targets, state, tokens):
 
 def execute(insns, string):
     input = iter(string)
-    def next():
-        try:
-            return input.next()
-        except StopIteration:
-            return None
-    ch = next()
+    def get_ch():
+        return next(input, None)
+    ch = get_ch()
     pc = 0
     recorder = Recorder(insns)
     while pc is not None:
         fn, args = insns[pc]
-        pc, ch = fn(pc, ch, next, recorder, *args)
+        pc, ch = fn(pc, ch, get_ch, recorder, *args)
 
-def do_halt(pc, ch, next, recorder):
+def do_halt(pc, ch, get_ch, recorder):
     return None, ch
 
-def do_emit(pc, ch, next, recorder, literal):
+def do_emit(pc, ch, get_ch, recorder, literal):
     recorder.record(gen_emit, literal)
     print literal
     return pc + 1, ch
@@ -134,22 +131,22 @@ def do_emit(pc, ch, next, recorder, literal):
 def gen_emit(literal):
     yield 'print %r' % literal
 
-def do_goto(pc, ch, next, recorder, target):
+def do_goto(pc, ch, get_ch, recorder, target):
     if target < pc:
         recorder.backjump(target)
     return target, ch
 
-def do_if(pc, ch, next, recorder, charset, target):
+def do_if(pc, ch, get_ch, recorder, charset, target):
     if ch and ch in charset:
         recorder.record(gen_if_true, (charset, target))
-        return pc + 1, next()
+        return pc + 1, get_ch()
     else:
         recorder.record(gen_if_false, (charset, pc + 1))
         return target, ch
 
 def gen_if_true(arg):
     yield 'if not (ch and ch in %r): return %r, ch' % arg
-    yield 'ch = next()'
+    yield 'ch = get_ch()'
 
 def gen_if_false(arg):
     yield 'if ch and ch in %r: return %r, ch' % arg
@@ -189,7 +186,7 @@ def compile(trace):
     return eval('compiled_loop'), ()
 
 def compiling(trace):
-    yield 'def compiled_loop(pc, ch, next, recorder):'
+    yield 'def compiled_loop(pc, ch, get_ch, recorder):'
     yield 'recorder.reset()'
     yield 'while True:'
     for fn, arg in trace:

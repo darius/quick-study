@@ -17,18 +17,18 @@ loopy = ["'x [ 'X emit goto 0 ]"]
 ## traces = running(loopy, 'xxx-')
 #. X
 #. X
-#. def foo(ch, next):
+#. def foo(ch, get_ch):
 #.   while True:
 #.     if not (ch and ch in 'x'): return ch, 'x', (0, 7)
-#.     ch = next()
+#.     ch = get_ch()
 #.     print 'X'
 #. X
-#. 0 <function foo at 0x10068d578>
+#. 0 <function foo at 0x7f556f46f938>
 #. 
 ### compile(traces[0])
 
 def compile(trace):
-    defn = '\n  '.join(['def foo(ch, next):'] + list(compiling(trace)))
+    defn = '\n  '.join(['def foo(ch, get_ch):'] + list(compiling(trace)))
     print defn
     exec defn
     return eval('foo')
@@ -43,7 +43,7 @@ def compiling(trace):
             yield '  print %r' % acc
         elif op == '[true':
             yield '  if not (ch and ch in %r): return ch, %r, %r' % (acc, acc, arg)
-            yield '  ch = next()'
+            yield '  ch = get_ch()'
         elif op == '[false':
             yield '  if ch and ch in %r: return ch, %r, %r' % (acc, acc, arg)
         else:
@@ -77,12 +77,9 @@ def running(program, string):
     states = [cmd.split() for cmd in program]
 
     input = iter(string)
-    def next():
-        try:
-            return input.next()
-        except StopIteration:
-            return None
-    ch = next()
+    def get_ch():
+        return next(input, None)
+    ch = get_ch()
 
     traces = {}                 # state_number -> compiled-function
     current_trace = []          # [state_number, insn, insn, ...]
@@ -106,7 +103,7 @@ def running(program, string):
             skip = tokens.index(']', pc) + 1
             if ch and ch in acc:
                 append('[true', (state, skip))
-                ch = next()
+                ch = get_ch()
             else:
                 append('[false', (state, pc))
                 pc = skip
@@ -125,7 +122,7 @@ def running(program, string):
                     traces[target] = compile(current_trace[1:])
                     del current_trace[:]
             if True and target in traces:
-                ch, acc, (state, pc) = traces[target](ch, next)
+                ch, acc, (state, pc) = traces[target](ch, get_ch)
                 tokens = states[state]
             else:
                 state = target
