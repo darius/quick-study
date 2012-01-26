@@ -68,7 +68,7 @@ class Branch(TraceTree):
 ## codegen(tt)
 #. while True:
 #.     print 1
-#.     if input.next() in 'ab':
+#.     if next(input, None) in 'ab':
 #.         print 2
 #.         return 3
 #.     else:
@@ -128,7 +128,7 @@ class If(Insn):
                                             Promise(pc + 1 + self.offset)))
         return tt.on_true if input.next() in self.chars else tt.on_false
     def emit(self, on_true_lines, on_false_lines):
-        return chain(('if input.next() in %r:' % self.chars,),
+        return chain(('if next(input, None) in %r:' % self.chars,),
                      indent(on_true_lines),
                      ('else:',),
                      indent(on_false_lines))
@@ -144,7 +144,7 @@ loopy = [If('x', 2), Print('X'), Jump(-2), Halt()]
 #. 
 ## codegen(hl)
 #. while True:
-#.     if input.next() in 'x':
+#.     if next(input, None) in 'x':
 #.         print 'X'
 #.         continue
 #.     else:
@@ -162,7 +162,7 @@ eg = [Print(1), If('ab', 2), Print(2), Halt(), Print(3), Halt()]
 ## codegen(header)
 #. while True:
 #.     print 1
-#.     if input.next() in 'ab':
+#.     if next(input, None) in 'ab':
 #.         return 2
 #.     else:
 #.         print 3
@@ -175,7 +175,7 @@ eg = [Print(1), If('ab', 2), Print(2), Halt(), Print(3), Halt()]
 ## codegen(header)
 #. while True:
 #.     print 1
-#.     if input.next() in 'ab':
+#.     if next(input, None) in 'ab':
 #.         print 2
 #.         return None
 #.     else:
