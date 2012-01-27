@@ -155,7 +155,7 @@ Wild idea: make our operationality criterion be *data parallel ops*.
 Send jitted code off to the GPU or something. Crazy!
 
 ------------------------------------------------------------------
-Multistage EBL shouldn't necessary (pointed out by Johnicholas)
+Multistage EBL shouldn't be necessary (pointed out by Johnicholas)
 
 Classic tracing jits compile out one level of interpretation
 overhead. For a tower of interpreters they're not fundamentally better
