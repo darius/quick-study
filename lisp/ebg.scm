@@ -68,7 +68,8 @@
 (define fenv
   '((factorial (n) (if (= n '0)
                        '1
-                       (* n (factorial (- n '1)))))))
+                       (* n (factorial (sub1 n)))))
+    (sub1 (x) (- x '1))))
 
 (define (testme)
   (evaluate fenv '(factorial '5) '() '(factorial param)
