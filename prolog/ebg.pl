@@ -1,9 +1,5 @@
 % -*- Prolog -*-
 % Explanation-based generalization.
-% Enter
-%    source.
-% at the prompt before loading terp.pl (so that clause(G, Antecedent)
-% can find the program's clauses).
 
 % G for goal
 % GG for generalized goal
@@ -23,28 +19,31 @@ ebg(G, GG, SR) :-
         eg(G, GG, R),
         simplify(R, SR).
 
-eg((G1, G2), (GG1, GG2), (R1, R2)) :-
-        !,
-        eg(G1, GG1, R1),
-        eg(G2, GG2, R2).
-eg(G, GG, basic(GG)) :-
-        basic(G), !,
-        call(G).
 eg(G, GG, R) :-
-        clause(GG, GAntecedent),
-        % I don't really understand this line:
-        copy_term((GG :- GAntecedent), (G :- Antecedent)),
-        eg(Antecedent, GAntecedent, R).
+        (basic(G) ->
+            call(G),
+            R = [G]
+        ;
+            (G :: Antecedents),
+            copy_term((GG :: GAntecedents), (G :: Antecedents)),
+            eg_all(Antecedents, GAntecedents, R)).
+
+eg_all([], [], []).
+eg_all([G|Gs], [GG|GGs], Rs) :-
+        eg(G, GG, Rs1),
+        eg_all(Gs, GGs, Rs2),
+        append(Rs1, Rs2, Rs).
 
 basic(G) :-
         predicate_property(G, built_in).
 
-simplify((R1, R2), SR) :-
-        simplify(R1, SR1),
-        simplify(R2, SR2),
-        append(SR1, SR2, SR).
-simplify(basic(G), []) :- trivial(G).
-simplify(basic(G), [G]) :- \+ trivial(G).
+simplify([], []).
+simplify([R|Rs], SRs) :-
+        (trivial(R) ->
+            simplify(Rs, SRs)
+        ;
+            simplify(Rs, SRs1),
+            SRs = [R|SRs1]).
 
 trivial(G) :-
         ground(G),
