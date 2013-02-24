@@ -159,10 +159,10 @@ trace_limit = 50                # We give up on traces that get this long
 class Recorder(object):
     def __init__(self, insns):
         self.insns = insns
-        self.heads = set()      # pc's starting compiled chunks
+        self.heads = set()      # The pc's where compiled chunks start
         self.reset()
     def reset(self, pc=None):
-        self.head = pc     # The pc starting the current trace, if any
+        self.head = pc     # The pc where the current trace (if any) started
         self.trace = []    # A growing list of instructions
     def record(self, gen_fn, arg):
         if self.head is not None:
@@ -181,7 +181,7 @@ class Recorder(object):
 
 def compile(trace):
     defn = '\n  '.join(compiling(trace))
-    print defn
+    print defn                  # Just to help us follow what's going on
     exec defn
     return eval('compiled_loop'), ()
 
