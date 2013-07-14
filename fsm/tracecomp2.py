@@ -88,15 +88,15 @@ def parse_cmd(insns, targets, state, tokens):
     for tnum, t in enum:
         targets[(state, tnum)] = len(insns)
         if t == 'emit':
-            tnum, literal = enum.next()
+            tnum, literal = next(enum)
             append(do_emit, literal)
         elif t == 'goto':
-            tnum, dest_state = enum.next()
+            tnum, dest_state = next(enum)
             append(do_goto, targets.get((int(dest_state), 0)))
             live = False
         elif t == 'if':
-            tnum, charset = enum.next()
-            tnum, _ = enum.next()
+            tnum, charset = next(enum)
+            tnum, _ = next(enum)
             assert _ == '['
             target = targets.get((state, tokens.index(']', tnum)))
             append(do_if, charset, target)
