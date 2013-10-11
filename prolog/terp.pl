@@ -1,6 +1,6 @@
 % -*- Prolog -*-
 % Toy interpreter for a Forth-like virtual machine.
-% The code is to be meta-intepreted: instead of
+% The code is to be meta-interpreted: instead of
 %    foo :- bar, baz.
 % we write
 %    foo :: [bar, baz].
