@@ -2,6 +2,12 @@
 Sequential finite-state transducer language.
 Interpreter with single-trace JIT to Python.
 This time the tracing code is more clearly separated.
+
+TODO:
+ * only trace hot loops
+ * if you encounter an already-compiled loop when tracing, keep
+   tracing its original bytecode instead of calling the compiled
+   version (would this help or hurt?)
 """
 
 loopy = ["if x [ emit X goto 0 ]"]
