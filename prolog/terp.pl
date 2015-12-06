@@ -10,13 +10,13 @@
 % S is the initial stack. Any output is by side effects.
 run(S)           :: [run(0, S)].
 run(PC, S)       :: [insn(PC, Insn), run(PC, S, Insn)].
-run(PC, S, halt) :: [].
+run(_,  _, halt) :: [].
 run(PC, S, Insn) :: [step(Insn, PC, S, PC1, S1), run(PC1, S1)].
 
-step(jump(Target), PC, S, Target, S)    :: [].
-step(branch(Target), PC, [0|S], Target, S) :: [].
-step(branch(Target), PC, [Z|S], PC1, S) :: [Z \= 0, PC1 is PC+1].
-step(Insn, PC, S, PC1, S1)              :: [operate(Insn, S, S1), PC1 is PC+1].
+step(jump(Target),   _, S,     Target, S) :: [].
+step(branch(Target), _, [0|S], Target, S) :: [].
+step(branch(_),     PC, [Z|S], PC1, S)    :: [Z \= 0, PC1 is PC+1].
+step(Insn,          PC, S,     PC1, S1)   :: [operate(Insn, S, S1), PC1 is PC+1].
 
 operate(push(Lit), S, [Lit|S])      :: [].
 operate(over, [Z,Y|S], [Y,Z,Y|S])   :: [].

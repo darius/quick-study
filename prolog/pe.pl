@@ -5,6 +5,8 @@
 % R for residual
 % SRs for simplified residuals
 
+:- op(1200, xfx, '::').
+
 peval(G, SRs) :-
         pe(G, Rs),
         simplify(Rs, SRs).

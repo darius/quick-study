@@ -15,6 +15,8 @@
 % where we actually want something like
 % R = [N=0,write(1),nl]
 
+:- op(1200, xfx, '::').
+
 ebg(G, GG, SR) :-
         eg(G, GG, R),
         simplify(R, SR).

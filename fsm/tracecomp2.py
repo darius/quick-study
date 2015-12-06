@@ -24,7 +24,7 @@ def show(insns):
 #.   1 do_emit  'X'
 #.   2 do_goto  0
 #.   3 do_halt  
-#. 
+
 ## show(parse(branchy))
 #.   0 do_if    'a', 2
 #.   1 do_goto  8
@@ -36,14 +36,11 @@ def show(insns):
 #.   7 do_halt  
 #.   8 do_emit  'two'
 #.   9 do_halt  
-#. 
 
 ## run(["emit X"], '')
 #. X
-#. 
 ## run(["if x [ emit hey ]"], 'x')
 #. hey
-#. 
 ## run(["if x [ emit hey ]"], 'y')
             
 ## run(loopy, 'xxxx-')
@@ -57,22 +54,17 @@ def show(insns):
 #.     print 'X'
 #. X
 #. X
-#. 
 
 ## run(branchy, 'a')
 #. two
-#. 
 ## run(branchy, 'b')
 #. one
-#. 
 ## run(branchy, 'c')
 #. neither
 #. two
-#. 
 ## run(branchy, '')
 #. neither
 #. two
-#. 
 
 def run(program, string):
     return execute(parse(program), string)
