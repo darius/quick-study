@@ -69,8 +69,12 @@
   '((factorial (n) (if (= n '0)
                        '1
                        (* n (factorial (sub1 n)))))
-    (sub1 (x) (- x '1))))
+    (sub1 (x) (- x '1))
+    (iterfact (n p) (if (= n '0)
+                        p
+                        (iterfact (sub1 n) (* n p))))))
 
 (define (testme)
-  (evaluate fenv '(factorial '5) '() '(factorial param)
+;  (evaluate fenv '(factorial '5) '() '(factorial param)
+  (evaluate fenv '(iterfact '5 '1) '() '(iterfact param '1)
             list))

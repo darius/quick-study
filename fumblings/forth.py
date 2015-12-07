@@ -283,7 +283,7 @@ comp("""
 
 run(words['main'], ds, rs, code, data, words)
 ## ds
-#. [5]
+#. [5L]
 
 """
 : 2dup   over over ;
@@ -294,5 +294,3 @@ run(words['main'], ds, rs, code, data, words)
 
 ## print nativize(words['2*'], code)
 #. ['t0 = pop(ds)', 't1 = ((t0 + t0) & wmask)', 'push(ds, t1)', 'return 24']
-#. 
-
